@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { Product, Category } from '@/types/product';
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import type { Product, Category } from '@/types';
+
+const supabase = createBrowserSupabaseClient()!;
 
 interface ProductFormProps {
   initialData?: Product;
@@ -20,6 +22,7 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
     name: initialData?.name || '',
     slug: initialData?.slug || '',
     description: initialData?.description || '',
+    story: initialData?.story || '',
     price: initialData?.price || 0,
     stock_quantity: initialData?.stock_quantity || 0,
     image_url: initialData?.image_url || '',
@@ -29,6 +32,9 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
     water_frequency: initialData?.water_frequency || '',
     indoor: initialData?.indoor ?? true,
     is_pet_friendly: initialData?.is_pet_friendly ?? false,
+    is_published: initialData?.is_published ?? false,
+    is_featured: initialData?.is_featured ?? false,
+    display_order: initialData?.display_order ?? 0,
   });
 
   const fetchCategories = async () => {
@@ -69,6 +75,9 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
       }
 
       const file = e.target.files[0];
+      if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+        throw new Error('Choose an image file smaller than 5 MB.');
+      }
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `products/${fileName}`;
@@ -167,6 +176,17 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
               className="w-full px-4 py-3 bg-emerald-50 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-medium text-emerald-900"
             />
           </div>
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-emerald-900/40 mb-2">Botanical Story</label>
+            <textarea
+              name="story"
+              value={formData.story}
+              onChange={handleChange}
+              rows={4}
+              placeholder="A premium narrative for the product page."
+              className="w-full px-4 py-3 bg-emerald-50 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-medium text-emerald-900"
+            />
+          </div>
         </div>
 
         {/* Pricing & Stock */}
@@ -215,6 +235,16 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-black uppercase tracking-widest text-emerald-900/40 mb-2">Display Order</label>
+            <input
+              type="number"
+              name="display_order"
+              value={formData.display_order}
+              onChange={handleChange}
+              className="w-full px-4 py-3 bg-emerald-50 border-none rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-900"
+            />
           </div>
 
           <div>
@@ -343,6 +373,26 @@ export default function ProductForm({ initialData, isEditing = false }: ProductF
                 className="w-5 h-5 rounded border-emerald-200 text-emerald-600 focus:ring-emerald-500"
               />
               <span className="font-bold text-emerald-900 group-hover:text-emerald-600 transition-colors">Pet Friendly</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                name="is_published"
+                checked={formData.is_published}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_published: e.target.checked }))}
+                className="w-5 h-5 rounded border-emerald-200 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="font-bold text-emerald-900">Published</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={formData.is_featured}
+                onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
+                className="w-5 h-5 rounded border-emerald-200 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="font-bold text-emerald-900">Featured</span>
             </label>
           </div>
         </div>

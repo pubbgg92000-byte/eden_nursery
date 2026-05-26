@@ -9,11 +9,18 @@ Experience the cinematic world of premium indoor plants. This project is a high-
 - **Admin Dashboard**: Secure panel for managing inventory, products, and categories.
 
 ## Admin Access
-The admin dashboard is located at `/admin`. It provides:
+The admin dashboard is located at `/admin` and is protected by Supabase Auth plus an `is_admin` profile flag. The first curator is provisioned manually in Supabase. It provides:
 - **Inventory Management**: View and update stock levels.
 - **Product CRUD**: Add, edit, and delete botanical species.
 - **Category Management**: Organize the collection.
 - **Real-time Stats**: Insights into stock levels and catalog size.
+- **Inquiry Inbox**: Cart and membership leads submitted by visitors.
+
+## Configuration
+
+Set valid `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and server-only `SUPABASE_SERVICE_ROLE_KEY` values for catalog/admin/inquiry functionality. Apply `supabase/schema.sql`, create the first Auth user, then insert its `profiles` row with `is_admin = true`.
+
+Customers do not create accounts or pay online in this release. Their cart remains local until they send an inquiry.
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router)

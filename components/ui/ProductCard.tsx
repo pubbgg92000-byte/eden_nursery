@@ -1,93 +1,48 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Product } from '@/types/product';
-import { useStore } from '@/store/useStore';
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import type { Product } from "@/types";
+import { useStore } from "@/store/useStore";
 
-interface ProductCardProps {
-  product: Product;
-}
-
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+export default function ProductCard({ product }: { product: Product }) {
   const addToCart = useStore((state) => state.addToCart);
   const [added, setAdded] = useState(false);
+  const soldOut = product.stock_quantity <= 0;
 
-  const handleAdd = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image_url: product.image_url
-    });
+  function handleAdd() {
+    addToCart({ id: product.id, name: product.name, price: Number(product.price), image_url: product.image_url });
     setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
+    window.setTimeout(() => setAdded(false), 1600);
+  }
 
   return (
-    <motion.div
-      whileHover={{ y: -10 }}
-      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-emerald-50"
-    >
-      <Link href={`/products/${product.slug}`}>
-        <div className="relative h-64 w-full bg-emerald-50">
-          {/* Category Badge */}
-          <div className="absolute top-4 left-4 z-10">
-            <span className="px-3 py-1 bg-emerald-600/90 backdrop-blur-sm text-[10px] font-black text-white rounded-full uppercase tracking-widest shadow-lg">
-              {product.category?.name || 'Plant'}
-            </span>
-          </div>
-          <img
-            src={product.image_url || ''}
-            alt={product.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?q=80&w=600&auto=format&fit=crop';
-            }}
-          />
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-emerald-800">
-            ${product.price}
-          </div>
+    <motion.article whileHover={{ y: -8 }} className="overflow-hidden rounded-2xl border border-emerald-50 bg-white shadow-sm transition-shadow hover:shadow-xl">
+      <Link href={`/products/${product.slug}`} className="block">
+        <div className="relative h-64 bg-emerald-50">
+          <span className="absolute left-4 top-4 z-10 rounded-full bg-emerald-700/90 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+            {product.category?.name ?? "Botanical"}
+          </span>
+          <img src={product.image_url || "/plants/monstera.jpg"} alt={product.name} width={640} height={640} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+          <span className="absolute right-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-emerald-800">
+            ${Number(product.price).toFixed(2)}
+          </span>
         </div>
       </Link>
-
       <div className="p-6">
-        <div className="flex justify-between items-start mb-2">
-          <Link href={`/products/${product.slug}`}>
-            <h3 className="text-xl font-bold text-emerald-900 hover:text-emerald-600 transition-colors">
-              {product.name}
-            </h3>
-          </Link>
+        <Link href={`/products/${product.slug}`} className="text-xl font-bold text-emerald-900 transition-colors hover:text-emerald-600">
+          {product.name}
+        </Link>
+        <p className="mb-4 mt-2 line-clamp-2 text-sm text-emerald-700/70">{product.description}</p>
+        <div className="mb-6 flex gap-2 text-[10px] font-bold uppercase">
+          <span className="rounded bg-emerald-50 px-2 py-1 text-emerald-700">{product.care_level} Care</span>
+          <span className="rounded bg-blue-50 px-2 py-1 text-blue-700">{product.sunlight}</span>
         </div>
-        
-        <p className="text-emerald-700/70 text-sm mb-4 line-clamp-2">
-          {product.description}
-        </p>
-
-        <div className="flex items-center gap-2 mb-6">
-          <span className="px-2 py-1 bg-emerald-50 text-[10px] font-bold text-emerald-700 rounded uppercase tracking-tighter">
-            {product.care_level} Care
-          </span>
-          <span className="px-2 py-1 bg-blue-50 text-[10px] font-bold text-blue-700 rounded uppercase tracking-tighter">
-            {product.sunlight}
-          </span>
-        </div>
-
-        <button
-          onClick={handleAdd}
-          disabled={added}
-          className={`w-full py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg ${
-            added 
-              ? 'bg-emerald-100 text-emerald-700 shadow-none cursor-default' 
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200'
-          }`}
-        >
-          {added ? 'Added to Cart ✓' : 'Add to Cart'}
+        <button type="button" onClick={handleAdd} disabled={soldOut || added} className="button-primary w-full disabled:cursor-not-allowed disabled:bg-emerald-100 disabled:text-emerald-700">
+          {soldOut ? "Currently Unavailable" : added ? "Added to Cart" : "Add to Cart"}
         </button>
       </div>
-    </motion.div>
+    </motion.article>
   );
-};
-
-export default ProductCard;
+}

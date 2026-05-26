@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem } from '@/types/product';
+import type { UICartItem } from '@/types';
 
 interface State {
   scrollProgress: number;
   setScrollProgress: (progress: number) => void;
-  cart: CartItem[];
-  addToCart: (item: Omit<CartItem, 'quantity'>) => void;
+  cart: UICartItem[];
+  addToCart: (item: Omit<UICartItem, 'quantity'>) => void;
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -41,6 +41,7 @@ export const useStore = create<State>()(
     }),
     {
       name: 'eden-nursery-storage',
+      skipHydration: true,
     }
   )
 );

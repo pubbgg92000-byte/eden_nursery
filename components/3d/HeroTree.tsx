@@ -1,325 +1,147 @@
 "use client";
 
+import { Clone, PointMaterial, Points, useGLTF, useTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { useRef, useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useStore } from "@/store/useStore";
-import { Points, PointMaterial, shaderMaterial } from "@react-three/drei";
-import { extend } from "@react-three/fiber";
 
-// Custom Wind Shader for Leaves/Flowers
-const WindMaterial = shaderMaterial(
-  {
-    uTime: 0,
-    uColor: new THREE.Color("#2E7D32"),
-    uWindSpeed: 0.8,
-    uWindStrength: 0.15,
-    uGrowth: 1.0,
-    uNoiseScale: 2.0,
-  },
-  // vertex shader
-  `
-  varying vec2 vUv;
-  varying float vDistortion;
-  uniform float uTime;
-  uniform float uWindSpeed;
-  uniform float uWindStrength;
-  uniform float uGrowth;
-  uniform float uNoiseScale;
-  
-  void main() {
-    vUv = uv;
-    vec3 pos = position * uGrowth;
-    
-    // Wave-based wind with noise simulation
-    float distortion = sin(uTime * uWindSpeed + pos.y * uNoiseScale) * 
-                      cos(uTime * uWindSpeed * 0.7 + pos.x * uNoiseScale) * 
-                      uWindStrength;
-    
-    vDistortion = distortion;
-    
-    // Apply sway based on height
-    float heightFactor = max(0.0, pos.y + 0.5);
-    pos.x += distortion * heightFactor;
-    pos.z += distortion * 0.5 * heightFactor;
-    
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-  `,
-  // fragment shader
-  `
-  varying vec2 vUv;
-  varying float vDistortion;
-  uniform vec3 uColor;
-  
-  void main() {
-    vec3 color = uColor;
-    // Subtle color variation based on distortion
-    color += vDistortion * 0.1;
-    gl_FragColor = vec4(color, 1.0);
-  }
-  `
-);
+type VectorTuple = [number, number, number];
 
-extend({ WindMaterial });
+const DRACO_PATH = "/draco/";
+const FLOWERS: VectorTuple[] = [[-0.82, -2.35, 0.45], [0.72, -2.35, 0.7], [-1.36, -2.34, -0.45], [1.26, -2.35, -0.32]];
+const GRASSES: VectorTuple[] = [[-1.8, -2.48, 0.5], [-1.2, -2.48, -1], [1.25, -2.48, -1.1], [1.8, -2.48, 0.7], [-2.3, -2.48, -0.4], [2.35, -2.48, -0.2]];
+const ROCKS: VectorTuple[] = [[-1.9, -2.42, -0.8], [1.7, -2.42, 0.72], [0.85, -2.43, -1.45]];
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      windMaterial: any;
-    }
-  }
+function phase(progress: number, start: number, span = 0.2) {
+  return Math.min(1, Math.max(0, (progress - start) / span));
 }
 
-const Leaf = ({ position, rotation, scale = 1, color = "#2E7D32", growthProgress = 1 }: any) => {
-  const meshRef = useRef<any>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.material.uTime = state.clock.getElapsedTime();
-      meshRef.current.material.uGrowth = growthProgress;
-    }
-  });
-
-  return (
-    <mesh position={position} rotation={rotation} scale={scale * growthProgress}>
-      <coneGeometry args={[0.08, 0.25, 3]} />
-      {/* @ts-ignore */}
-      <windMaterial uColor={new THREE.Color(color)} transparent />
-    </mesh>
-  );
-};
-
-const Flower = ({ position, color = "#FFC107", growthProgress = 0 }: any) => {
-  const scale = Math.max(0, (growthProgress - 0.75) * 4); // Bloom even later
-  return (
-    <mesh position={position} scale={scale}>
-      <sphereGeometry args={[0.06, 12, 12]} />
-      <meshStandardMaterial 
-        color={color} 
-        emissive={color} 
-        emissiveIntensity={0.8} 
-        roughness={0.2}
-      />
-    </mesh>
-  );
-};
-
-const Root = ({ growthProgress }: { growthProgress: number }) => {
-  const count = 5;
-  const roots = useMemo(() => {
-    return Array.from({ length: count }).map((_, i) => {
-      const angle = (i / count) * Math.PI * 2;
-      const points = [
-        new THREE.Vector3(0, -2, 0),
-        new THREE.Vector3(Math.cos(angle) * 0.5, -2.2, Math.sin(angle) * 0.5),
-        new THREE.Vector3(Math.cos(angle) * 1.2, -2.5, Math.sin(angle) * 1.2),
-        new THREE.Vector3(Math.cos(angle) * 2.0, -2.8, Math.sin(angle) * 2.0),
-      ];
-      return new THREE.CatmullRomCurve3(points);
-    });
-  }, []);
+export function HeroTree() {
+  const progress = useStore((state) => state.scrollProgress);
+  const seed = phase(progress, 0);
+  const trunk = phase(progress, 0.12, 0.3);
+  const roots = phase(progress, 0.22, 0.42);
+  const vines = phase(progress, 0.42, 0.38);
+  const bloom = phase(progress, 0.57, 0.22);
+  const ecosystem = phase(progress, 0.76, 0.24);
 
   return (
     <group>
-      {roots.map((curve, i) => {
-        const points = curve.getPoints(20);
-        return (
-          <group key={i}>
-            {points.map((p, j) => {
-              const pProgress = j / points.length;
-              if (pProgress > growthProgress) return null;
-              return (
-                <mesh key={j} position={[p.x, p.y, p.z]} scale={0.05 * (1 - pProgress)}>
-                  <sphereGeometry args={[1, 8, 8]} />
-                  <meshStandardMaterial color="#3E2723" roughness={1} />
-                </mesh>
-              );
-            })}
-          </group>
-        );
-      })}
+      <Terrain reveal={ecosystem} />
+      <Pollen reveal={bloom} />
+      <BotanicalModels trunk={trunk} roots={roots} vines={vines} bloom={bloom} ecosystem={ecosystem} />
+      <mesh position={[0, -2.35 + seed * 0.12, 0]} scale={0.08 + seed * 0.35}>
+        <sphereGeometry args={[0.32, 16, 12]} />
+        <meshStandardMaterial color="#56372a" roughness={0.88} />
+      </mesh>
+      <pointLight position={[1, 3, 2]} color="#d1fae5" intensity={0.4 + bloom * 2} distance={12} />
+      <spotLight position={[-5, 6, 5]} angle={0.32} penumbra={0.8} intensity={0.3 + ecosystem} color="#fef3c7" />
     </group>
   );
-};
+}
 
-const Vine = ({ growthProgress }: { growthProgress: number }) => {
-  const curve = useMemo(() => {
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -2, 0),
-      new THREE.Vector3(0.2, -1.2, 0.1),
-      new THREE.Vector3(-0.1, -0.5, 0.2),
-      new THREE.Vector3(0.15, 0.2, -0.1),
-      new THREE.Vector3(-0.1, 1.0, 0.1),
-      new THREE.Vector3(0, 1.8, 0),
-    ]);
-  }, []);
+function BotanicalModels({ trunk, roots, vines, bloom, ecosystem }: { trunk: number; roots: number; vines: number; bloom: number; ecosystem: number }) {
+  const tree = useGLTF("/models/tree.glb", DRACO_PATH);
+  const rootBed = useGLTF("/models/roots.glb", DRACO_PATH);
+  const vine = useGLTF("/models/vines.glb", DRACO_PATH);
+  const flower = useGLTF("/models/flowers.glb", DRACO_PATH);
+  const grass = useGLTF("/models/grass.glb", DRACO_PATH);
+  const rock = useGLTF("/models/rocks.glb", DRACO_PATH);
+  const treeScale = Math.max(0.001, trunk * 3.65);
 
-  const points = useMemo(() => curve.getPoints(80), [curve]);
-  
   return (
     <group>
-      {points.map((p, i) => {
-        const pProgress = i / points.length;
-        if (pProgress > growthProgress) return null;
-        return (
-          <mesh key={i} position={[p.x, p.y, p.z]} scale={0.015}>
-            <sphereGeometry args={[1, 8, 8]} />
-            <meshStandardMaterial color="#4CAF50" roughness={0.5} />
-          </mesh>
-        );
-      })}
+      <group position={[0, -2.42, 0]} scale={treeScale}>
+        <Clone object={tree.scene} castShadow receiveShadow />
+      </group>
+      <group position={[0, -2.48, 0]} rotation={[0, 0.45, 0]} scale={Math.max(0.001, roots * 2.15)}>
+        <Clone object={rootBed.scene} castShadow receiveShadow />
+      </group>
+      <group position={[0, -2.25, 0]} rotation={[0, 1.15, 0]} scale={Math.max(0.001, vines * 0.95)}>
+        <Clone object={vine.scene} castShadow />
+      </group>
+      {FLOWERS.map((position, index) => (
+        <group key={position.join(",")} position={position} rotation={[0, index * 1.4, 0]} scale={Math.max(0.001, bloom * 0.52)}>
+          <Clone object={flower.scene} castShadow />
+        </group>
+      ))}
+      {GRASSES.map((position, index) => (
+        <group key={position.join(",")} position={position} rotation={[0, index * 1.16, 0]} scale={Math.max(0.001, ecosystem * 0.65)}>
+          <Clone object={grass.scene} receiveShadow />
+        </group>
+      ))}
+      {ROCKS.map((position, index) => (
+        <group key={position.join(",")} position={position} rotation={[0, index * 1.8, 0]} scale={Math.max(0.001, ecosystem * 0.42)}>
+          <Clone object={rock.scene} receiveShadow />
+        </group>
+      ))}
     </group>
   );
-};
+}
 
-const ParticleField = ({ growthProgress }: { growthProgress: number }) => {
-  const count = 400;
-  const positions = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 12;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 12;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 12;
-    }
-    return pos;
-  }, []);
-
+function Pollen({ reveal }: { reveal: number }) {
+  const texture = useTexture("/particles/pollen.svg");
   const pointsRef = useRef<THREE.Points>(null);
-
-  useFrame((state) => {
-    if (pointsRef.current) {
-      pointsRef.current.rotation.y = state.clock.getElapsedTime() * 0.08;
-      pointsRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 0.3) * 0.3;
-      // Opacity fade in based on growth
-      if (pointsRef.current.material instanceof THREE.PointsMaterial) {
-        pointsRef.current.material.opacity = Math.max(0, (growthProgress - 0.6) * 2.5);
-      }
+  const positions = useMemo(() => {
+    const values = new Float32Array(330);
+    for (let index = 0; index < 110; index += 1) {
+      values[index * 3] = Math.sin(index * 91.31) * 5;
+      values[index * 3 + 1] = Math.sin(index * 31.77) * 4;
+      values[index * 3 + 2] = Math.cos(index * 47.19) * 4;
     }
+    return values;
+  }, []);
+  useFrame(({ clock }) => {
+    if (pointsRef.current) pointsRef.current.rotation.y = clock.elapsedTime * 0.04;
   });
-
   return (
-    <Points ref={pointsRef} positions={positions} stride={3}>
-      <PointMaterial
-        transparent
-        color="#FFF9C4"
-        size={0.025}
-        sizeAttenuation={true}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
+    <Points ref={pointsRef} positions={positions} scale={reveal}>
+      <PointMaterial map={texture} transparent color="#fde68a" size={0.075} depthWrite={false} opacity={0.72} alphaTest={0.02} />
     </Points>
   );
-};
+}
 
-export const HeroTree = () => {
-  const groupRef = useRef<THREE.Group>(null);
-  const scrollProgress = useStore((state) => state.scrollProgress);
-
-  // 5-Phase Growth System
-  // Phase 1: Seedling (0 - 0.2)
-  const seedlingGrowth = Math.min(1, scrollProgress * 5);
-  
-  // Phase 2: Trunk Expansion (0.2 - 0.4)
-  const trunkGrowth = Math.max(0, Math.min(1, (scrollProgress - 0.2) * 5));
-  
-  // Phase 3: Branch Spawning (0.4 - 0.6)
-  const branchGrowth = Math.max(0, Math.min(1, (scrollProgress - 0.4) * 5));
-  
-  // Phase 4: Flower Blooming (0.6 - 0.8)
-  const bloomGrowth = Math.max(0, Math.min(1, (scrollProgress - 0.6) * 5));
-  
-  // Phase 5: Full Ecosystem (0.8 - 1.0)
-  const ecosystemGrowth = Math.max(0, Math.min(1, (scrollProgress - 0.8) * 5));
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      const time = state.clock.getElapsedTime();
-      groupRef.current.rotation.y = Math.sin(time * 0.15) * 0.05;
+function Terrain({ reveal }: { reveal: number }) {
+  const grass = useRef<THREE.InstancedMesh>(null);
+  const [colorMap, normalMap, roughnessMap] = useTexture(["/textures/soil-color.webp", "/textures/soil-normal.webp", "/textures/soil-roughness.webp"]);
+  useLayoutEffect(() => {
+    for (const texture of [colorMap, normalMap, roughnessMap]) {
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(3, 3);
     }
-  });
-
+    colorMap.colorSpace = THREE.SRGBColorSpace;
+  }, [colorMap, normalMap, roughnessMap]);
+  useLayoutEffect(() => {
+    if (!grass.current) return;
+    const transform = new THREE.Object3D();
+    for (let index = 0; index < 24; index += 1) {
+      const angle = index * 2.399;
+      const radius = 1.4 + (index % 6) * 0.3;
+      transform.position.set(Math.cos(angle) * radius, -2.55, Math.sin(angle) * radius);
+      transform.scale.set(1, 0.2 + reveal * (0.5 + (index % 4) * 0.12), 1);
+      transform.updateMatrix();
+      grass.current.setMatrixAt(index, transform.matrix);
+    }
+    grass.current.instanceMatrix.needsUpdate = true;
+  }, [reveal]);
   return (
-    <group ref={groupRef}>
-      <ParticleField growthProgress={scrollProgress} />
-      
-      {/* Root System (Phase 5 focus) */}
-      {ecosystemGrowth > 0 && <Root growthProgress={ecosystemGrowth} />}
-
-      {/* Trunk (Phase 1 & 2) */}
-      <mesh 
-        position={[0, -2 + (seedlingGrowth * 0.5) + (trunkGrowth * 1.5), 0]} 
-        scale={[
-          1 + trunkGrowth * 0.5, 
-          seedlingGrowth * 1 + trunkGrowth * 3, 
-          1 + trunkGrowth * 0.5
-        ]}
-      >
-        <cylinderGeometry args={[0.15, 0.25, 1, 12]} />
-        <meshStandardMaterial color="#4E342E" roughness={0.9} />
+    <group>
+      <mesh position={[0, -2.65, 0]} receiveShadow>
+        <cylinderGeometry args={[4.5, 4.8, 0.3, 32]} />
+        <meshStandardMaterial map={colorMap} normalMap={normalMap} roughnessMap={roughnessMap} color="#3a4a38" roughness={1} />
       </mesh>
-
-      {/* Primary Branches (Phase 3) */}
-      {branchGrowth > 0 && (
-        <group position={[0, -0.5 + trunkGrowth * 1.5, 0]}>
-          <Branch level={1} growth={branchGrowth} rotation={[0, 0, Math.PI / 4]} bloomProgress={bloomGrowth} />
-          <Branch level={1} growth={branchGrowth} rotation={[0, (Math.PI * 2) / 3, Math.PI / 4]} bloomProgress={bloomGrowth} />
-          <Branch level={1} growth={branchGrowth} rotation={[0, (Math.PI * 4) / 3, Math.PI / 4]} bloomProgress={bloomGrowth} />
-        </group>
-      )}
-
-      {/* Vines (Phase 4 & 5) */}
-      <Vine growthProgress={Math.max(0, (scrollProgress - 0.5) * 2)} />
-
-      {/* Dynamic Lighting based on growth */}
-      <pointLight 
-        position={[2, 2, 2]} 
-        intensity={0.5 + bloomGrowth * 1.5} 
-        color={bloomGrowth > 0.5 ? "#E1F5FE" : "#FFF9C4"} 
-      />
-      <spotLight 
-        position={[-5, 5, 5]} 
-        intensity={0.5 + ecosystemGrowth * 1} 
-        angle={0.3} 
-        penumbra={1} 
-        castShadow 
-      />
+      <instancedMesh ref={grass} args={[undefined, undefined, 24]}>
+        <coneGeometry args={[0.045, 0.75, 4]} />
+        <meshStandardMaterial color="#276749" />
+      </instancedMesh>
     </group>
   );
-};
+}
 
-const Branch = ({ level, growth, rotation, bloomProgress }: any) => {
-  const branchLength = 1.6 / level;
-  const subBranchGrowth = Math.max(0, (growth - 0.4) * 1.6);
-  const foliageGrowth = Math.max(0, (growth - 0.2) * 1.25);
-
-  return (
-    <group rotation={rotation}>
-      <mesh position={[0, (branchLength * growth) / 2, 0]} scale={[1, growth, 1]}>
-        <cylinderGeometry args={[0.04 / level, 0.08 / level, branchLength, 8]} />
-        <meshStandardMaterial color="#4E342E" />
-      </mesh>
-      
-      {growth > 0.3 && (
-        <group position={[0, branchLength * growth, 0]}>
-          {/* Foliage */}
-          <Leaf position={[0.12, 0, 0]} rotation={[0, 0, 0.6]} growthProgress={foliageGrowth} />
-          <Leaf position={[-0.12, 0.1, 0.05]} rotation={[0, 1.2, -0.6]} growthProgress={foliageGrowth} color="#2E7D32" />
-          <Leaf position={[0, 0.15, -0.1]} rotation={[0.5, 0, 0]} growthProgress={foliageGrowth} color="#1B5E20" />
-          
-          {/* Flowers */}
-          {bloomProgress > 0 && (
-            <Flower position={[0, 0.1, 0]} growthProgress={bloomProgress} />
-          )}
-          
-          {level < 3 && (
-            <>
-              <Branch level={level + 1} growth={subBranchGrowth} rotation={[0, 0.5, 0.7]} bloomProgress={bloomProgress} />
-              <Branch level={level + 1} growth={subBranchGrowth} rotation={[0, -0.5, -0.7]} bloomProgress={bloomProgress} />
-            </>
-          )}
-        </group>
-      )}
-    </group>
-  );
-};
+useGLTF.preload("/models/tree.glb", DRACO_PATH);
+useGLTF.preload("/models/roots.glb", DRACO_PATH);
+useGLTF.preload("/models/vines.glb", DRACO_PATH);
+useGLTF.preload("/models/flowers.glb", DRACO_PATH);
+useGLTF.preload("/models/grass.glb", DRACO_PATH);
+useGLTF.preload("/models/rocks.glb", DRACO_PATH);

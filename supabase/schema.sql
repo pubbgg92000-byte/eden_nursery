@@ -1,169 +1,154 @@
--- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create Categories table
 CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL UNIQUE,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create Products table
 CREATE TABLE IF NOT EXISTS products (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    image_url TEXT,
-    category_id UUID REFERENCES categories(id),
-    stock_quantity INTEGER DEFAULT 0,
-    
-    -- Plant specific metadata
-    care_level TEXT, -- Easy, Moderate, Expert
-    sunlight TEXT, -- Low, Medium, Bright Indirect, Full Sun
-    water_frequency TEXT,
-    indoor BOOLEAN DEFAULT true,
-    height TEXT,
-    is_pet_friendly BOOLEAN DEFAULT false,
-    
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    description TEXT NOT NULL,
+    story TEXT,
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
+    image_url TEXT NOT NULL DEFAULT '',
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+    care_level TEXT NOT NULL DEFAULT 'Easy' CHECK (care_level IN ('Easy', 'Moderate', 'Expert')),
+    sunlight TEXT NOT NULL DEFAULT '',
+    water_frequency TEXT NOT NULL DEFAULT '',
+    indoor BOOLEAN NOT NULL DEFAULT TRUE,
+    is_pet_friendly BOOLEAN NOT NULL DEFAULT FALSE,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    is_featured BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- RLS Policies (Simplified for now)
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS story TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_published BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0;
 
--- Profiles table (linked to auth.users)
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT,
     avatar_url TEXT,
-    is_admin BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Orders table
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE IF NOT EXISTS testimonials (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-    status TEXT NOT NULL DEFAULT 'pending', -- pending, processing, shipped, delivered, cancelled
-    total_amount DECIMAL(10, 2) NOT NULL,
-    shipping_address JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    author_name TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment TEXT NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Order Items table
-CREATE TABLE IF NOT EXISTS order_items (
+CREATE TABLE IF NOT EXISTS inquiries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL DEFAULT 'cart' CHECK (kind = 'cart'),
+    status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'closed')),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    message TEXT,
+    estimated_total DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    consent_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS inquiry_items (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    inquiry_id UUID NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE,
     product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-    quantity INTEGER NOT NULL,
-    price_at_time DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    product_name TEXT NOT NULL,
+    image_url TEXT,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0)
 );
 
--- Reviews table
-CREATE TABLE IF NOT EXISTS reviews (
+CREATE TABLE IF NOT EXISTS plan_inquiries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-    comment TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    plan TEXT NOT NULL CHECK (plan IN ('Seedling', 'Sprout', 'Bloom')),
+    status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'closed')),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT,
+    message TEXT,
+    consent_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Carts table
-CREATE TABLE IF NOT EXISTS carts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Cart Items table
-CREATE TABLE IF NOT EXISTS cart_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    cart_id UUID REFERENCES carts(id) ON DELETE CASCADE,
-    product_id UUID REFERENCES products(id) ON DELETE CASCADE,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(cart_id, product_id)
-);
-
--- Subscriptions table
-CREATE TABLE IF NOT EXISTS subscriptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email TEXT UNIQUE NOT NULL,
-    status TEXT DEFAULT 'active',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Enable RLS on all tables
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE carts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-
--- Helper function to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin()
-RETURNS BOOLEAN AS $$
-BEGIN
-    RETURN (SELECT is_admin FROM profiles WHERE id = auth.uid());
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT COALESCE((SELECT is_admin FROM profiles WHERE id = auth.uid()), FALSE);
+$$;
 
--- Profiles Policies
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inquiry_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE plan_inquiries ENABLE ROW LEVEL SECURITY;
 
--- Orders Policies
-CREATE POLICY "Users can view own orders" ON orders FOR SELECT USING (auth.uid() = user_id OR is_admin());
-CREATE POLICY "Admins can update orders" ON orders FOR UPDATE USING (is_admin());
+DROP POLICY IF EXISTS "Allow public read access on categories" ON categories;
+DROP POLICY IF EXISTS "Allow admin write access on categories" ON categories;
+CREATE POLICY "Allow public read access on categories" ON categories FOR SELECT TO anon, authenticated USING (TRUE);
+CREATE POLICY "Allow admin write access on categories" ON categories FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Order Items Policies
-CREATE POLICY "Users can view own order items" ON order_items FOR SELECT USING (
-    EXISTS (SELECT 1 FROM orders WHERE id = order_items.order_id AND (user_id = auth.uid() OR is_admin()))
-);
+DROP POLICY IF EXISTS "Allow public read access on products" ON products;
+DROP POLICY IF EXISTS "Allow admin write access on products" ON products;
+CREATE POLICY "Allow public read access on products" ON products FOR SELECT TO anon, authenticated USING (is_published OR is_admin());
+CREATE POLICY "Allow admin write access on products" ON products FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Reviews Policies
-CREATE POLICY "Reviews are viewable by everyone" ON reviews FOR SELECT USING (true);
-CREATE POLICY "Authenticated users can create reviews" ON reviews FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Users can update own reviews" ON reviews FOR UPDATE USING (auth.uid() = user_id OR is_admin());
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Profiles visible to owner or admins" ON profiles;
+CREATE POLICY "Profiles visible to owner or admins" ON profiles FOR SELECT TO authenticated USING (id = auth.uid() OR is_admin());
 
--- Carts Policies
-CREATE POLICY "Users can view own cart" ON carts FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create own cart" ON carts FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Public testimonials are readable" ON testimonials;
+DROP POLICY IF EXISTS "Admins manage testimonials" ON testimonials;
+CREATE POLICY "Public testimonials are readable" ON testimonials FOR SELECT TO anon, authenticated
+    USING (EXISTS (SELECT 1 FROM products WHERE products.id = product_id AND products.is_published));
+CREATE POLICY "Admins manage testimonials" ON testimonials FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Cart Items Policies
-CREATE POLICY "Users can view own cart items" ON cart_items FOR SELECT USING (
-    EXISTS (SELECT 1 FROM carts WHERE id = cart_items.cart_id AND user_id = auth.uid())
-);
-CREATE POLICY "Users can manage own cart items" ON cart_items FOR ALL USING (
-    EXISTS (SELECT 1 FROM carts WHERE id = cart_items.cart_id AND user_id = auth.uid())
-);
+DROP POLICY IF EXISTS "Admins manage inquiries" ON inquiries;
+DROP POLICY IF EXISTS "Admins manage inquiry items" ON inquiry_items;
+DROP POLICY IF EXISTS "Admins manage plan inquiries" ON plan_inquiries;
+CREATE POLICY "Admins manage inquiries" ON inquiries FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Admins manage inquiry items" ON inquiry_items FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Admins manage plan inquiries" ON plan_inquiries FOR ALL TO authenticated USING (is_admin()) WITH CHECK (is_admin());
 
--- Subscriptions Policies
-CREATE POLICY "Public can subscribe" ON subscriptions FOR INSERT WITH CHECK (true);
-CREATE POLICY "Admins can view subscriptions" ON subscriptions FOR SELECT USING (is_admin());
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', TRUE)
+ON CONFLICT (id) DO UPDATE SET public = TRUE;
 
--- Storage Bucket Policies (Note: These are usually set via Supabase Dashboard or API, but defining them for reference)
--- insert into storage.buckets (id, name, public) values ('product-images', 'product-images', true);
--- insert into storage.buckets (id, name, public) values ('category-images', 'category-images', true);
+DROP POLICY IF EXISTS "Product images public read" ON storage.objects;
+DROP POLICY IF EXISTS "Admins upload product images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins update product images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins delete product images" ON storage.objects;
+CREATE POLICY "Product images public read" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'product-images');
+CREATE POLICY "Admins upload product images" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'product-images' AND is_admin());
+CREATE POLICY "Admins update product images" ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'product-images' AND is_admin()) WITH CHECK (bucket_id = 'product-images' AND is_admin());
+CREATE POLICY "Admins delete product images" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'product-images' AND is_admin());
 
--- CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id IN ('product-images', 'category-images') );
--- CREATE POLICY "Admin Upload" ON storage.objects FOR INSERT WITH CHECK ( bucket_id IN ('product-images', 'category-images') AND is_admin() );
-
--- Categories & Products Update Policies
-CREATE POLICY "Allow public read access on categories" ON categories FOR SELECT USING (true);
-CREATE POLICY "Allow admin write access on categories" ON categories FOR ALL USING (is_admin());
-CREATE POLICY "Allow public read access on products" ON products FOR SELECT USING (true);
-CREATE POLICY "Allow admin write access on products" ON products FOR ALL USING (is_admin());
+-- Create the first administrator manually after that user signs up through Supabase Auth:
+-- INSERT INTO profiles (id, full_name, is_admin) VALUES ('<auth-user-uuid>', 'EDEN Curator', TRUE);

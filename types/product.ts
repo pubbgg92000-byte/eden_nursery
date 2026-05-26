@@ -1,1 +1,1 @@
-export * from './index';
+export type { Category, Product, UICartItem as CartItem } from "./index";

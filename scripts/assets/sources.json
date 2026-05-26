@@ -1,0 +1,161 @@
+{
+  "licenses": {
+    "polyhaven": {
+      "name": "CC0 1.0",
+      "url": "https://polyhaven.com/license"
+    },
+    "polypizza-cc0": {
+      "name": "CC0 1.0",
+      "url": "https://poly.pizza/m/QN3Ru02ayU"
+    },
+    "polypizza-ccby": {
+      "name": "CC-BY 3.0",
+      "url": "https://poly.pizza/m/2jffIS8PMjZ",
+      "attribution": "Vines by Poly by Google, via Poly Pizza, licensed CC-BY 3.0."
+    },
+    "unsplash": {
+      "name": "Unsplash License",
+      "url": "https://unsplash.com/license"
+    }
+  },
+  "models": [
+    {
+      "target": "tree.glb",
+      "title": "Tree",
+      "provider": "Poly Pizza",
+      "author": "Kenney",
+      "license": "polypizza-cc0",
+      "page": "https://poly.pizza/m/QN3Ru02ayU",
+      "download": "https://static.poly.pizza/85a2d37d-4c02-4e0c-8573-47d245338453.glb"
+    },
+    {
+      "target": "vines.glb",
+      "title": "Vines",
+      "provider": "Poly Pizza",
+      "author": "Poly by Google",
+      "license": "polypizza-ccby",
+      "page": "https://poly.pizza/m/2jffIS8PMjZ",
+      "download": "https://static.poly.pizza/27cfc103-f86a-4439-b584-8ba1d9dd44a4.glb"
+    },
+    {
+      "target": "flowers.glb",
+      "title": "Celandine 01",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "celandine_01"
+    },
+    {
+      "target": "grass.glb",
+      "title": "Grass Medium 01",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "grass_medium_01"
+    },
+    {
+      "target": "rocks.glb",
+      "title": "Boulder 01",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "boulder_01"
+    },
+    {
+      "target": "roots.glb",
+      "title": "Pine Roots",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "pine_roots"
+    }
+  ],
+  "hdri": {
+    "target": "forest.hdr",
+    "title": "Mossy Forest",
+    "provider": "Poly Haven",
+    "license": "polyhaven",
+    "assetId": "mossy_forest",
+    "resolution": "1k"
+  },
+  "textures": [
+    {
+      "target": "bark",
+      "title": "Bark Brown 02",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "bark_brown_02"
+    },
+    {
+      "target": "moss",
+      "title": "Mossy Rock",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "mossy_rock"
+    },
+    {
+      "target": "soil",
+      "title": "Mud Forest",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "mud_forest"
+    },
+    {
+      "target": "rocks",
+      "title": "Mossy Rock",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "mossy_rock"
+    },
+    {
+      "target": "foliage",
+      "title": "Forest Leaves 02",
+      "provider": "Poly Haven",
+      "license": "polyhaven",
+      "assetId": "forest_leaves_02"
+    }
+  ],
+  "photography": [
+    {
+      "target": "monstera.jpg",
+      "title": "Green plant on white ceramic pot",
+      "provider": "Unsplash",
+      "author": "feey",
+      "license": "unsplash",
+      "page": "https://unsplash.com/photos/green-plant-on-white-ceramic-pot-bwsTJMnhcwE",
+      "download": "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=1400&h=1750&q=86"
+    },
+    {
+      "target": "fiddle-leaf.jpg",
+      "title": "Green-leafed plant in white pot",
+      "provider": "Unsplash",
+      "author": "Kara Eads",
+      "license": "unsplash",
+      "page": "https://unsplash.com/photos/green-leafed-plant-in-white-pot-EbLX7oRo4vI",
+      "download": "https://images.unsplash.com/photo-1545239705-1564e58b9e4a?auto=format&fit=crop&w=1400&h=1750&q=86"
+    },
+    {
+      "target": "calathea.jpg",
+      "title": "Calathea in a white pot",
+      "provider": "Unsplash",
+      "author": "Gigi Visacri",
+      "license": "unsplash",
+      "page": "https://unsplash.com/photos/a-green-plant-in-a-white-pot-on-a-table-rNjEk8d2vmQ",
+      "download": "https://images.unsplash.com/photo-1714507767656-2fb307e1b03d?auto=format&fit=crop&w=1400&h=1750&q=86"
+    },
+    {
+      "target": "peace-lily.jpg",
+      "title": "White flower with green leaves",
+      "provider": "Unsplash",
+      "author": "Maria Elizabeth",
+      "license": "unsplash",
+      "page": "https://unsplash.com/photos/white-flower-with-green-leaves-CDoPIWJDvvw",
+      "download": "https://images.unsplash.com/photo-1593691509543-c55fb32d8de5?auto=format&fit=crop&w=1400&h=1750&q=86"
+    },
+    {
+      "target": "snake-plant.jpg",
+      "title": "Green snake plant on white ceramic pot",
+      "provider": "Unsplash",
+      "author": "Kelly Sikkema",
+      "license": "unsplash",
+      "page": "https://unsplash.com/photos/green-snake-plant-on-white-ceramic-pot-m4kw7twpA6k",
+      "download": "https://images.unsplash.com/photo-1599009944997-3544a939813c?auto=format&fit=crop&w=1400&h=1750&q=86"
+    }
+  ]
+}

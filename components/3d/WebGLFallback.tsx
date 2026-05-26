@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 
 export const WebGLFallback = () => {
   return (
-    <div className="fixed top-0 left-0 w-full h-full -z-10 bg-stone-950 overflow-hidden">
-      {/* Cinematic Gradient Background */}
+    <div className="fixed top-0 left-0 z-0 w-full h-full bg-stone-950 overflow-hidden">
       <div 
         className="absolute inset-0 opacity-40"
         style={{
@@ -14,7 +13,6 @@ export const WebGLFallback = () => {
         }}
       />
       
-      {/* Subtle animated light patches */}
       <motion.div
         animate={{
           x: [0, 50, 0],
@@ -43,8 +41,8 @@ export const WebGLFallback = () => {
         className="absolute -bottom-1/4 -right-1/4 w-full h-full bg-emerald-800/20 rounded-full blur-[100px]"
       />
 
-      {/* Grain/Noise Overlay for texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+      <div className="absolute inset-0 bg-[url('/plants/monstera.jpg')] bg-cover bg-center opacity-[0.09]" />
+      <div className="absolute inset-0 opacity-[0.06] pointer-events-none mix-blend-overlay bg-[url('/environment/forest-noise.svg')]" />
     </div>
   );
 };

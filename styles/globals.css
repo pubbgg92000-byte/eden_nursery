@@ -24,3 +24,53 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+*:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 3px;
+}
+
+.field {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(209 250 229);
+  background: rgb(236 253 245 / 0.7);
+  padding: 0.8rem 1rem;
+  color: rgb(6 78 59);
+  outline: none;
+}
+
+.field:focus {
+  border-color: rgb(16 185 129);
+}
+
+.button-primary, .button-light {
+  display: inline-flex;
+  justify-content: center;
+  border-radius: 0.85rem;
+  padding: 0.85rem 1.4rem;
+  font-weight: 700;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+.button-primary { background: rgb(5 150 105); color: white; }
+.button-primary:hover { background: rgb(4 120 87); }
+.button-light { background: white; color: rgb(6 78 59); }
+.button-primary:active, .button-light:active { transform: scale(0.98); }
+.nav-link { color: rgb(255 255 255 / 0.75); font-size: 0.875rem; font-weight: 700; }
+.nav-link:hover { color: rgb(52 211 153); }
+.filter-chip { border-radius: 999px; background: rgb(236 253 245); color: rgb(6 95 70); padding: 0.55rem 1rem; font-size: 0.875rem; font-weight: 700; }
+.filter-chip-active { background: rgb(5 150 105); color: white; }
+.quantity-button { display: inline-flex; height: 2rem; width: 2rem; align-items: center; justify-content: center; border-radius: 0.5rem; border: 1px solid rgb(209 250 229); background: white; }
+.stock-chip { border-radius: 0.8rem; background: rgb(209 250 229); padding: 0.6rem 0.8rem; color: rgb(4 120 87); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
+.stock-chip-out { background: rgb(254 226 226); color: rgb(185 28 28); }
+.plan-card { display: flex; flex-direction: column; border-radius: 2.5rem; border: 1px solid rgb(209 250 229); background: white; padding: 2.5rem; color: rgb(6 78 59); }
+.plan-card-featured { background: rgb(6 78 59); color: white; box-shadow: 0 22px 40px rgb(16 185 129 / 0.15); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

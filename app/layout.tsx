@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://eden-nursery.vercel.app"),
   title: {
     default: "Eden Nursery | Premium Botanical Boutique",
     template: "%s | Eden Nursery",
@@ -27,14 +28,6 @@ export const metadata: Metadata = {
     description: "Experience the cinematic world of premium indoor plants.",
     url: "https://eden-nursery.vercel.app",
     siteName: "Eden Nursery",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Eden Nursery",
-      },
-    ],
     locale: "en_US",
     type: "website",
   },
@@ -42,7 +35,6 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Eden Nursery | Premium Botanical Boutique",
     description: "Experience the cinematic world of premium indoor plants.",
-    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -60,7 +52,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-emerald-950">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-white text-emerald-950">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "Organization", name: "EDEN Nursery", url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://eden-nursery.vercel.app" }) }}
+        />
         <Navbar />
         <main className="flex-1">
           {children}

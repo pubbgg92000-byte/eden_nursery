@@ -1,26 +1,23 @@
-import { MetadataRoute } from 'next';
-import { MOCK_PRODUCTS } from '@/lib/seedData';
+import type { MetadataRoute } from "next";
+import { getPublishedProducts } from "@/lib/supabase/queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://eden-nursery.vercel.app';
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://eden-nursery.vercel.app";
 
-  // Base pages
-  const routes = ['', '/products', '/about', '/pricing', '/contact'].map(
-    (route) => ({
-      url: `${baseUrl}${route}`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly' as const,
-      priority: 1,
-    })
-  );
+export const dynamic = "force-dynamic";
 
-  // Product pages
-  const productEntries = MOCK_PRODUCTS.map((product) => ({
-    url: `${baseUrl}/products/${product.slug}`,
-    lastModified: new Date(),
-    changeFrequency: 'daily' as const,
-    priority: 0.8,
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await getPublishedProducts();
+  const pages = ["", "/products", "/about", "/pricing", "/contact"].map((path) => ({
+    url: `${baseUrl}${path}`,
+    changeFrequency: "weekly" as const,
+    priority: path === "" ? 1 : 0.8,
   }));
-
-  return [...routes, ...productEntries];
+  return [
+    ...pages,
+    ...products.map((product) => ({
+      url: `${baseUrl}/products/${product.slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+  ];
 }
